@@ -1,2 +1,2 @@
 # scikitlearn
-scikie-learn
+scikit example learn
