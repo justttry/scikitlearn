@@ -98,59 +98,66 @@ class SubjectBodyExtractor(BaseEstimator, TransformerMixin):
         return features
 
 
-pipeline = Pipeline([
-    # Extract the subject & body
-    ('subjectbody', SubjectBodyExtractor()),
-
-    # Use FeatureUnion to combine the features from subject and body
-    ('union', FeatureUnion(
-        transformer_list=[
-
-            # Pipeline for pulling features from the post's subject line
-            ('subject', Pipeline([
-                ('selector', ItemSelector(key='subject')),
-                ('tfidf', TfidfVectorizer(min_df=50)),
-            ])),
-
-            # Pipeline for standard bag-of-words model for body
-            ('body_bow', Pipeline([
-                ('selector', ItemSelector(key='body')),
-                ('tfidf', TfidfVectorizer()),
-                ('best', TruncatedSVD(n_components=50)),
-            ])),
-
-            # Pipeline for pulling ad hoc features from post's body
-            ('body_stats', Pipeline([
-                ('selector', ItemSelector(key='body')),
-                ('stats', TextStats()),  # returns a list of dicts
-                ('vect', DictVectorizer()),  # list of dicts -> feature matrix
-            ])),
-
-        ],
-
-        # weight components in FeatureUnion
-        transformer_weights={
-            'subject': 0.8,
-            'body_bow': 0.5,
-            'body_stats': 1.0,
-        },
-    )),
-
-    # Use a SVC classifier on the combined features
-    ('svc', SVC(kernel='linear')),
-])
-
-# limit the list of categories to make running this example faster.
-categories = ['alt.atheism', 'talk.religion.misc']
-train = fetch_20newsgroups(random_state=1,
-                           subset='train',
-                           categories=categories,
-                           )
-test = fetch_20newsgroups(random_state=1,
-                          subset='test',
-                          categories=categories,
-                          )
-
-pipeline.fit(train.data, train.target)
-y = pipeline.predict(test.data)
-print(classification_report(y, test.target))
+#----------------------------------------------------------------------
+def main():
+    """"""
+    pipeline = Pipeline([
+        # Extract the subject & body
+        ('subjectbody', SubjectBodyExtractor()),
+    
+        # Use FeatureUnion to combine the features from subject and body
+        ('union', FeatureUnion(
+            transformer_list=[
+    
+                # Pipeline for pulling features from the post's subject line
+                ('subject', Pipeline([
+                    ('selector', ItemSelector(key='subject')),
+                    ('tfidf', TfidfVectorizer(min_df=50)),
+                ])),
+    
+                # Pipeline for standard bag-of-words model for body
+                ('body_bow', Pipeline([
+                    ('selector', ItemSelector(key='body')),
+                    ('tfidf', TfidfVectorizer()),
+                    ('best', TruncatedSVD(n_components=50)),
+                ])),
+    
+                # Pipeline for pulling ad hoc features from post's body
+                ('body_stats', Pipeline([
+                    ('selector', ItemSelector(key='body')),
+                    ('stats', TextStats()),  # returns a list of dicts
+                    ('vect', DictVectorizer()),  # list of dicts -> feature matrix
+                ])),
+    
+            ],
+    
+            # weight components in FeatureUnion
+            transformer_weights={
+                'subject': 0.8,
+                'body_bow': 0.5,
+                'body_stats': 1.0,
+            },
+        )),
+    
+        # Use a SVC classifier on the combined features
+        ('svc', SVC(kernel='linear')),
+    ])
+    
+    # limit the list of categories to make running this example faster.
+    categories = ['alt.atheism', 'talk.religion.misc']
+    train = fetch_20newsgroups(random_state=1,
+                               subset='train',
+                               categories=categories,
+                               )
+    test = fetch_20newsgroups(random_state=1,
+                              subset='test',
+                              categories=categories,
+                              )
+    
+    pipeline.fit(train.data, train.target)
+    y = pipeline.predict(test.data)
+    print(classification_report(y, test.target))
+    
+    
+if __name__ == '__main__':
+    main()
